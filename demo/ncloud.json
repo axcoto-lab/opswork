@@ -106,7 +106,7 @@
         "UseCustomCookbooks": "true",
         "CustomCookbooksSource": {
           "Type": "git",
-          "Url": "git@github.com:axcoto-lab/opswork.git"
+          "Url": "https://github.com/axcoto-lab/opswork.git"
         },
         "VpcId": {"Ref": "VinhTestVPC"},
         "DefaultSubnetId": {"Ref": "VinhTestPublicSubnet"},
@@ -134,7 +134,7 @@
       "Properties": {
         "StackId": {"Ref": "VinhTestOpsWorksTest"},
         "Type": "custom",
-        "Shortname" : "etcd-app",
+        "Shortname" : "etcd",
         "EnableAutoHealing" : "true",
         "AutoAssignElasticIps" : "false",
         "AutoAssignPublicIps" : "true",
