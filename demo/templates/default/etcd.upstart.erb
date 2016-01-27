@@ -1,0 +1,8 @@
+author  "Vinh <kurei@axcoto.com>"
+description "ETCD"
+
+start on (virtual-filesystems and net-device-up IFACE!=lo)
+stop on shutdown
+
+console log
+exec /usr/local/bin/etcd
