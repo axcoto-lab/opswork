@@ -14,9 +14,9 @@
       "Type" : "String",
       "MinLength": "9",
       "MaxLength": "18",
-      "Default" : "0.0.0.0/0",
+      "Default" : "71.198.94.103/32",
       "AllowedPattern" : "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
-      "ConstraintDescription" : "71.198.94.103/32"
+      "ConstraintDescription" : "Example: 71.198.94.103/32"
     },
 
     "EC2InstanceType" : {
@@ -28,7 +28,7 @@
     },
 
     "AppName": {
-      "Default": "myapp",
+      "Default": "vinhapp",
       "Description": "vinhapp",
       "Type": "String",
       "MinLength": "1",
@@ -36,6 +36,25 @@
       "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
       "ConstraintDescription": "vinhapp"
     },
+
+    "ServiceRole": {
+      "Default": "vinh-test",
+      "Description": "The OpsWorks service role",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "64",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9-]*",
+      "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+    },
+    "InstanceRole": {
+      "Default": "vinh-test",
+      "Description": "The OpsWorks instance role",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "64",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9-]*",
+      "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+    }
 
   },
 
@@ -72,7 +91,7 @@
       "Type": "AWS::OpsWorks::Stack",
       "Properties": {
         "Name": {
-          "Ref": "VinhTestOpsWorksTest"
+          "Ref": "AWS::StackName"
         },
         "ServiceRoleArn": {
           "Fn::Join": [
@@ -88,24 +107,51 @@
         "CustomCookbooksSource": {
           "Type": "git",
           "Url": "git@github.com:axcoto-lab/opswork.git"
-        }
+        },
+        "VpcId": {"Ref": "VinhTestVPC"},
+        "DefaultSubnetId": {"Ref": "VinhTestPublicSubnet"},
+        "DefaultSshKeyName": "vinh"
       }
     },
 
     "VinhTestEtCDLayer": {
       "Type": "AWS::OpsWorks::Layer",
-      "DependsOn": "vinhapp",
+      "DependsOn": [
+        "VinhTestVPC",
+        "VinhTestPublicSubnet",
+        "VinhTestInternetGateway",
+        "VinhTestGatewayToInternet",
+        "VinhTestPublicRouteTable",
+        "VinhTestPublicRoute",
+        "VinhTestPublicSubnetRouteTableAssociation",
+        "VinhTestPublicNetworkAcl",
+        "VinhTestInboundSSHPublicNetworkAclEntry",
+        "VinhTestInboundEphemeralPublicNetworkAclEntry",
+        "VinhTestOutboundPublicNetworkAclEntry",
+        "VinhTestPublicSubnetNetworkAclAssociation"
+      ],
       "Properties": {
         "StackId": {"Ref": "VinhTestOpsWorksTest"},
-        "Type": "etcd-app",
+        "Type": "custom",
         "Shortname" : "etcd-app",
         "EnableAutoHealing" : "true",
         "AutoAssignElasticIps" : "false",
         "AutoAssignPublicIps" : "true",
         "Name": "EtCDTest",
         "CustomRecipes" : {
-          "Configure" : ["demo"]
-        }
+          "Configure" : ["demo::default"]
+        },
+        "CustomSecurityGroupIds": [{ "Ref": "VinhTestEC2SecurityGroup" }]
+      }
+    },
+
+    "VinhTestEtCD1": {
+      "Type": "AWS::OpsWorks::Instance",
+      "Properties": {
+        "StackId": {"Ref": "VinhTestOpsWorksTest"},
+        "LayerIds": [{"Ref": "VinhTestEtCDLayer"}],
+        "InstanceType": "t2.nano",
+        "SshKeyName"  : "vinh"
       }
     },
 
@@ -116,20 +162,20 @@
         "EnableDnsHostnames" : "true",
         "CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "VPC", "CIDR" ]},
         "Tags" : [
-          { "Key" : "Application", "Value" : { "Ref" : "VinhTestOpsWorksTest" } },
+          { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
           { "Key" : "Network", "Value" : "test" },
           { "Key" : "vinh-test", "Value" : "vinh-test" }
         ]
       }
     },
 
-    "VinhTestsubnet" : {
+    "VinhTestPublicSubnet" : {
       "Type" : "AWS::EC2::Subnet",
       "Properties" : {
         "VpcId" : { "Ref" : "VinhTestVPC" },
         "CidrBlock" : { "Fn::FindInMap" : [ "SubnetConfig", "Public", "CIDR" ]},
         "Tags" : [
-          { "Key" : "Application", "Value" : { "Ref" : "VinhTestOpsWorksTest" } },
+          { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
           { "Key" : "Network", "Value" : "Public" }
         ]
       }
@@ -139,7 +185,7 @@
       "Type" : "AWS::EC2::InternetGateway",
       "Properties" : {
         "Tags" : [
-          { "Key" : "Application", "Value" : { "Ref" : "VinhTestOpsWorksTest" } },
+          { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
           { "Key" : "Network", "Value" : "Public" }
         ]
       }
@@ -149,7 +195,7 @@
        "Type" : "AWS::EC2::VPCGatewayAttachment",
        "Properties" : {
          "VpcId" : { "Ref" : "VinhTestVPC" },
-         "InternetGatewayId" : { "Ref" : "InternetGateway" }
+         "InternetGatewayId" : { "Ref" : "VinhTestInternetGateway" }
        }
     },
 
@@ -158,7 +204,7 @@
       "Properties" : {
         "VpcId" : { "Ref" : "VinhTestVPC" },
         "Tags" : [
-          { "Key" : "Application", "Value" : { "Ref" : "VinhTestOpsWorksTest" } },
+          { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
           { "Key" : "Network", "Value" : "Public" }
         ]
       }
@@ -168,9 +214,9 @@
       "Type" : "AWS::EC2::Route",
       "DependsOn" : "VinhTestGatewayToInternet",
       "Properties" : {
-        "RouteTableId" : { "Ref" : "PublicRouteTable" },
+        "RouteTableId" : { "Ref" : "VinhTestPublicRouteTable" },
         "DestinationCidrBlock" : "0.0.0.0/0",
-        "GatewayId" : { "Ref" : "InternetGateway" }
+        "GatewayId" : { "Ref" : "VinhTestInternetGateway" }
       }
     },
 
@@ -185,9 +231,9 @@
     "VinhTestPublicNetworkAcl" : {
       "Type" : "AWS::EC2::NetworkAcl",
       "Properties" : {
-        "VpcId" : { "Ref" : "VPC" },
+        "VpcId" : { "Ref" : "VinhTestVPC" },
         "Tags" : [
-          { "Key" : "Application", "Value" : { "Ref" : "VinhTestOpsWorksTest" } },
+          { "Key" : "Application", "Value" : { "Ref" : "AWS::StackName" } },
           { "Key" : "Network", "Value" : "Public" }
         ]
       }
@@ -240,24 +286,6 @@
       }
     },
 
-    "VinhTestEC2Host" : {
-      "Type" : "AWS::EC2::Instance",
-      "DependsOn" : "VinhTestGatewayToInternet",
-      "Properties" : {
-        "InstanceType" : { "Ref" : "EC2InstanceType" },
-        "KeyName"  : { "Ref" : "KeyName" },
-        "ImageId"  : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
-                       { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "EC2InstanceType" }, "Arch" ] } ] },
-        "NetworkInterfaces" : [{
-          "GroupSet"                 : [{ "Ref" : "VinhTestEC2SecurityGroup" }],
-          "AssociatePublicIpAddress" : "true",
-          "DeviceIndex"              : "0",
-          "DeleteOnTermination"      : "true",
-          "SubnetId"                 : { "Ref" : "VinhTestPublicSubnet" }
-        }]
-      }
-    },
-
     "VinhTestEC2SecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
@@ -281,11 +309,7 @@
     },
     "PublicSubnet" : {
       "Description" : "SubnetId of the public subnet",
-      "Value" :  { "Ref" : "PublicSubnet" }
-    },
-    "DNSName" : {
-      "Description" : "DNS Name of the EC2 host",
-      "Value" :  { "Fn::GetAtt" : ["EC2Host", "PublicDnsName"] }
+      "Value" :  { "Ref" : "VinhTestPublicSubnet" }
     }
   }
 }
