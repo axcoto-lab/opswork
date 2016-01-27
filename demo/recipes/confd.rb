@@ -28,7 +28,7 @@ directory '/etc/confd/conf.d/' do
   action :create
 end
 
-directory '/etc/confd/template/' do
+directory '/etc/confd/templates/' do
   recursive true
   owner 'root'
   group 'root'
