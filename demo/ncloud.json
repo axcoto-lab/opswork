@@ -110,7 +110,8 @@
         },
         "VpcId": {"Ref": "VinhTestVPC"},
         "DefaultSubnetId": {"Ref": "VinhTestPublicSubnet"},
-        "DefaultSshKeyName": "vinh"
+        "DefaultSshKeyName": "vinh",
+        "UseOpsworksSecurityGroups": "false"
       }
     },
 
@@ -145,15 +146,6 @@
       }
     },
 
-    "VinhTestEtCD1": {
-      "Type": "AWS::OpsWorks::Instance",
-      "Properties": {
-        "StackId": {"Ref": "VinhTestOpsWorksTest"},
-        "LayerIds": [{"Ref": "VinhTestEtCDLayer"}],
-        "InstanceType": "t2.nano",
-        "SshKeyName"  : "vinh"
-      }
-    },
 
     "VinhTestVPC" : {
       "Type" : "AWS::EC2::VPC",
