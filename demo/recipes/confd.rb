@@ -19,3 +19,38 @@ remote_file "/usr/local/bin/confd" do
   group 'root'
   mode '0755'
 end
+
+directory '/etc/confd/conf.d/' do
+  recursive true
+  owner 'root'
+  group 'root'
+  mode '0755'
+  action :create
+end
+
+directory '/etc/confd/template/' do
+  recursive true
+  owner 'root'
+  group 'root'
+  mode '0755'
+  action :create
+end
+
+template '/etc/confd/conf.d/myconfig.toml' do
+  source 'confd/myconfig.toml'
+end
+
+template '/etc/confd/templates/cert.tmpl' do
+  source 'confd/cert.template.erb'
+end
+
+template '/etc/init/confd.conf' do
+  source 'confd.upstart.erb'
+end
+
+service 'confd' do
+  supports :status => true
+  action [:enable, :start]
+end
+
+

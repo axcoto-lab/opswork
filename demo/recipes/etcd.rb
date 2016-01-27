@@ -45,3 +45,15 @@ service 'etcd' do
   supports :status => true
   action [:enable, :start]
 end
+
+remote_file '/tmp/rds-cert' do
+  source 'http://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem'
+  action :create
+end
+
+cert = `curl -sL http://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem`
+http_request 'write cert to etcd' do
+  action :put
+  url 'http://127.0.0.1:2379/v2/keys/foo'
+  message "value=#{cert}"
+end

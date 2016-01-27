@@ -1,0 +1,6 @@
+[template]
+src = "cert.tmpl"
+dest = "/tmp/foo"
+keys = [
+    "/foo",
+]
